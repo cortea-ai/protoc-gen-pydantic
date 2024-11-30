@@ -1,0 +1,79 @@
+// fork from https://github.com/envoyproxy/protoc-gen-validate/blob/main/validate/validate.proto
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+package py_validate;
+
+option go_package = "github.com/cortea-ai/protoc-gen-pydantic/validate";
+
+extend google.protobuf.MessageOptions {
+  optional bool ignored = 1073;
+}
+
+extend google.protobuf.OneofOptions {
+  optional bool required = 1073;
+  optional OneofRules oneof_extend = 1074;
+}
+
+extend google.protobuf.FieldOptions {
+  optional FieldRules rules = 1073;
+}
+
+message OneofRules {
+  repeated string optional = 1;
+}
+
+message FieldRules {
+  oneof type {
+    FloatRules float = 1;
+    Int32Rules int32 = 2;
+    StringRules string = 3;
+    RepeatedRules repeated = 4;
+    MessageRules message = 5;
+  }
+}
+
+message FloatRules {
+  optional float lt = 1;
+  optional float lte = 2;
+  optional float gt = 3;
+  optional float gte = 4;
+  oneof default_config {
+    float default = 5;
+  }
+}
+
+message Int32Rules {
+  optional int32 lt = 1;
+  optional int32 lte = 2;
+  optional int32 gt = 3;
+  optional int32 gte = 4;
+  oneof default_config {
+    int32 default = 5;
+  }
+}
+
+message StringRules {
+  optional uint64 len = 1;
+  optional uint64 min_length = 2;
+  optional uint64 max_length = 3;
+  oneof well_known {
+    bool uuid = 4;
+  }
+  oneof default_config {
+    string default = 5;
+  }
+}
+
+message MessageRules {
+  string default_factory = 1;
+  bool default_empty = 2;
+}
+
+message RepeatedRules {
+  optional uint64 len = 1;
+  optional uint64 min_length = 2;
+  optional uint64 max_length = 3;
+  optional FieldRules items = 4;
+}

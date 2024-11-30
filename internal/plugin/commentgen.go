@@ -3,7 +3,7 @@ package plugin
 import (
 	"strings"
 
-	"go.einride.tech/protoc-gen-typescript-http/internal/codegen"
+	"github.com/cortea-ai/protoc-gen-pydantic/internal/codegen"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -20,12 +20,12 @@ func (c commentGenerator) generateLeading(f *codegen.File, indent int) {
 		if line == "" {
 			continue
 		}
-		f.P(t(indent), "// ", strings.TrimSpace(line))
+		f.P(t(indent), "# ", strings.TrimSpace(line))
 	}
 	if field, ok := c.descriptor.(protoreflect.FieldDescriptor); ok {
 		if behaviorComment := fieldBehaviorComment(field); len(behaviorComment) > 0 {
-			f.P(t(indent), "//")
-			f.P(t(indent), "// ", behaviorComment)
+			f.P(t(indent), "#")
+			f.P(t(indent), "# ", behaviorComment)
 		}
 	}
 }

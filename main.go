@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"go.einride.tech/protoc-gen-typescript-http/internal/plugin"
+	"github.com/cortea-ai/protoc-gen-pydantic/internal/plugin"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )

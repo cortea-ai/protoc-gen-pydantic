@@ -1,6 +1,10 @@
 package plugin
 
-import "google.golang.org/protobuf/reflect/protoreflect"
+import (
+	"fmt"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
+)
 
 type Type struct {
 	IsNamed bool
@@ -11,13 +15,16 @@ type Type struct {
 	Underlying *Type
 }
 
-func (t Type) Reference() string {
+func (t Type) Reference(isUUID bool) string {
 	switch {
 	case t.IsMap:
-		return "{ [key: string]: " + t.Underlying.Reference() + " }"
+		return "dict[str, " + t.Underlying.Reference(isUUID) + "]"
 	case t.IsList:
-		return t.Underlying.Reference() + "[]"
+		return "list[" + t.Underlying.Reference(isUUID) + "]"
 	default:
+		if isUUID {
+			return "UUID"
+		}
 		return t.Name
 	}
 }
@@ -44,23 +51,23 @@ func typeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescriptor
 func namedTypeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescriptor) Type {
 	switch field.Kind() {
 	case protoreflect.StringKind, protoreflect.BytesKind:
-		return Type{IsNamed: true, Name: "string"}
+		return Type{IsNamed: true, Name: "str"}
 	case protoreflect.BoolKind:
-		return Type{IsNamed: true, Name: "boolean"}
+		return Type{IsNamed: true, Name: "bool"}
 	case
 		protoreflect.Int32Kind,
 		protoreflect.Int64Kind,
 		protoreflect.Uint32Kind,
 		protoreflect.Uint64Kind,
-		protoreflect.DoubleKind,
 		protoreflect.Fixed32Kind,
 		protoreflect.Fixed64Kind,
 		protoreflect.Sfixed32Kind,
 		protoreflect.Sfixed64Kind,
 		protoreflect.Sint32Kind,
-		protoreflect.Sint64Kind,
-		protoreflect.FloatKind:
-		return Type{IsNamed: true, Name: "number"}
+		protoreflect.Sint64Kind:
+		return Type{IsNamed: true, Name: "int"}
+	case protoreflect.FloatKind, protoreflect.DoubleKind:
+		return Type{IsNamed: true, Name: "float"}
 	case protoreflect.MessageKind:
 		return typeFromMessage(pkg, field.Message())
 	case protoreflect.EnumKind:
@@ -68,9 +75,9 @@ func namedTypeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescr
 		if wkt, ok := WellKnownType(field.Enum()); ok {
 			return Type{IsNamed: true, Name: wkt.Name()}
 		}
-		return Type{IsNamed: true, Name: scopedDescriptorTypeName(pkg, desc)}
+		return Type{IsNamed: true, Name: string(desc.Name())}
 	default:
-		return Type{IsNamed: true, Name: "unknown"}
+		panic(fmt.Sprintf("unknown field kind: %s", field.Kind()))
 	}
 }
 
@@ -78,5 +85,5 @@ func typeFromMessage(pkg protoreflect.FullName, message protoreflect.MessageDesc
 	if wkt, ok := WellKnownType(message); ok {
 		return Type{IsNamed: true, Name: wkt.Name()}
 	}
-	return Type{IsNamed: true, Name: scopedDescriptorTypeName(pkg, message)}
+	return Type{IsNamed: true, Name: string(message.Name())}
 }

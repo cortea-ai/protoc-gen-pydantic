@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"go.einride.tech/protoc-gen-typescript-http/internal/codegen"
+	"github.com/cortea-ai/protoc-gen-pydantic/internal/codegen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -35,18 +35,31 @@ func Generate(request *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRe
 
 	params := parseParameters(request.GetParameter())
 
+	packageSuffix := params["package_suffix"]
+
 	var res pluginpb.CodeGeneratorResponse
 	for pkg, files := range packaged {
-		var index codegen.File
-		indexPathElems := append(strings.Split(string(pkg), "."), "index.ts")
-		if err := (packageGenerator{pkg: pkg, files: files}).Generate(&index, params); err != nil {
-			return nil, fmt.Errorf("generate package '%s': %w", pkg, err)
+		if includePath, ok := params["include_path"]; ok {
+			if !strings.HasPrefix(string(pkg), includePath) {
+				continue
+			}
 		}
-		index.P()
-		index.P("// @@protoc_insertion_point(typescript-http-eof)")
+		var index codegen.File
+		indexPathElems := append(strings.Split(string(pkg)+packageSuffix, "."), "pb_models_gen.py")
+		(packageGenerator{pkg: pkg, files: files, params: params}).Generate(&index)
 		res.File = append(res.File, &pluginpb.CodeGeneratorResponse_File{
 			Name:    proto.String(path.Join(indexPathElems...)),
 			Content: proto.String(string(index.Content())),
+		})
+		indexPathElems = append(strings.Split(string(pkg)+packageSuffix, "."), "__init__.py")
+		res.File = append(res.File, &pluginpb.CodeGeneratorResponse_File{
+			Name:    proto.String(path.Join(indexPathElems...)),
+			Content: proto.String("from .pb_models_gen import *\n"),
+		})
+		indexPathElems = append(strings.Split(string(pkg)+packageSuffix, "."), "py.typed")
+		res.File = append(res.File, &pluginpb.CodeGeneratorResponse_File{
+			Name:    proto.String(path.Join(indexPathElems...)),
+			Content: proto.String(""),
 		})
 	}
 	res.SupportedFeatures = proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))
