@@ -37,6 +37,12 @@ func Generate(request *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRe
 
 	packageSuffix := params["package_suffix"]
 
+	var filename string
+	var ok bool
+	if filename, ok = params["filename"]; !ok {
+		filename = "pb_models"
+	}
+
 	var res pluginpb.CodeGeneratorResponse
 	for pkg, files := range packaged {
 		if includePath, ok := params["include_path"]; ok {
@@ -45,7 +51,7 @@ func Generate(request *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRe
 			}
 		}
 		var index codegen.File
-		indexPathElems := append(strings.Split(string(pkg)+packageSuffix, "."), "pb_models_gen.py")
+		indexPathElems := append(strings.Split(string(pkg)+packageSuffix, "."), filename+".py")
 		(packageGenerator{pkg: pkg, files: files, params: params}).Generate(&index)
 		res.File = append(res.File, &pluginpb.CodeGeneratorResponse_File{
 			Name:    proto.String(path.Join(indexPathElems...)),
@@ -54,7 +60,7 @@ func Generate(request *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorRe
 		indexPathElems = append(strings.Split(string(pkg)+packageSuffix, "."), "__init__.py")
 		res.File = append(res.File, &pluginpb.CodeGeneratorResponse_File{
 			Name:    proto.String(path.Join(indexPathElems...)),
-			Content: proto.String("from .pb_models_gen import *\n"),
+			Content: proto.String("from ." + filename + " import *\n"),
 		})
 		indexPathElems = append(strings.Split(string(pkg)+packageSuffix, "."), "py.typed")
 		res.File = append(res.File, &pluginpb.CodeGeneratorResponse_File{
