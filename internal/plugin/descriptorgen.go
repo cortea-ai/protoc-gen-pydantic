@@ -181,7 +181,7 @@ func (d descriptorGenerator) generateMessageFields(f *codegen.File, message prot
 
 	if len(oneofFields) > 0 {
 		f.P("")
-		f.P(t(d.indent+2), `@model_validator(mode="before")`)
+		f.P(t(d.indent+2), `@model_validator(mode="after")`)
 	}
 	if len(oneofFields) > 0 {
 		f.P(t(d.indent+2), "def validate_one_ofs(self) -> Self:")
